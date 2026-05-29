@@ -1,0 +1,102 @@
+[
+  {
+    "id": "acc-rs-001",
+    "engine": "access",
+    "title": "未処理ステータスを更新する",
+    "category": "Recordset",
+    "difficulty": 3,
+    "prompt": "顧客テーブルの status が 未 の行を 済 に更新する Sub Main を書くんな",
+    "hints": ["OpenRecordset で開くんな", "Edit と Update を挟むんな"],
+    "answer": "Sub Main()\nDim rs As Variant\nSet rs = CurrentDb.OpenRecordset(\"顧客\")\nDo While Not rs.EOF\nIf rs.Fields(\"status\") = \"未\" Then\nrs.Edit\nrs.Fields(\"status\") = \"済\"\nrs.Update\nEnd If\nrs.MoveNext\nLoop\nEnd Sub",
+    "tags": ["Recordset", "Edit", "Update"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "顧客": {
+        "columns": ["id", "name", "status"],
+        "rows": [[1, "A", "未"], [2, "B", "済"], [3, "C", "未"]]
+      }
+    },
+    "judge": {
+      "type": "table",
+      "table": "顧客",
+      "expectedRows": [[1, "A", "済"], [2, "B", "済"], [3, "C", "済"]]
+    }
+  },
+  {
+    "id": "acc-debug-001",
+    "engine": "access",
+    "title": "未処理件数を表示する",
+    "category": "ドメイン集計",
+    "difficulty": 2,
+    "prompt": "status が 未 の件数を DCount で数えて Debug.Print するんな",
+    "hints": ["DCount を使うんな", "criteria は status = '未' なんな"],
+    "answer": "Sub Main()\nDebug.Print DCount(\"*\", \"顧客\", \"status = '未'\")\nEnd Sub",
+    "tags": ["DCount", "Debug.Print"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "顧客": {
+        "columns": ["id", "name", "status"],
+        "rows": [[1, "A", "未"], [2, "B", "済"], [3, "C", "未"]]
+      }
+    },
+    "judge": {
+      "type": "debug",
+      "expectedLines": ["2"]
+    }
+  },
+  {
+    "id": "acc-query-001",
+    "engine": "access",
+    "title": "未処理顧客の上位2件を確認する",
+    "category": "クエリ",
+    "difficulty": 2,
+    "prompt": "Main は何もしなくてよいので、判定クエリ結果を確認できる状態にするんな",
+    "hints": ["空の Sub Main でも通るんな", "判定は Access SQL 変換の確認なんな"],
+    "answer": "Sub Main()\nEnd Sub",
+    "tags": ["Query", "TOP", "Like"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "顧客": {
+        "columns": ["id", "name", "status"],
+        "rows": [[1, "A", "未確認"], [2, "B", "済"], [3, "C", "未発送"], [4, "D", "未"]]
+      }
+    },
+    "judge": {
+      "type": "query",
+      "sql": "SELECT TOP 2 name FROM 顧客 WHERE status LIKE '未*' ORDER BY id",
+      "expectedRows": [["A"], ["C"]],
+      "preserveOrder": true
+    }
+  },
+  {
+    "id": "acc-exec-001",
+    "engine": "access",
+    "title": "IIf を使って状態を一括更新する",
+    "category": "SQL",
+    "difficulty": 3,
+    "prompt": "CurrentDb.Execute で 未 を 再確認 に更新するんな",
+    "hints": ["IIf を SQL 文字列内で使うんな", "Execute に UPDATE 文を渡すんな"],
+    "answer": "Sub Main()\nCurrentDb.Execute(\"UPDATE 顧客 SET status = IIf(status = '未', '再確認', status)\")\nEnd Sub",
+    "tags": ["Execute", "IIf"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "顧客": {
+        "columns": ["id", "name", "status"],
+        "rows": [[1, "A", "未"], [2, "B", "済"], [3, "C", "未"]]
+      }
+    },
+    "judge": {
+      "type": "table",
+      "table": "顧客",
+      "expectedRows": [[1, "A", "再確認"], [2, "B", "済"], [3, "C", "再確認"]]
+    }
+  }
+]

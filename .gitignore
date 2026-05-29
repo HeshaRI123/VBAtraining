@@ -1,0 +1,13 @@
+node_modules
+dist
+.DS_Store
+coverage
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+public/sql/
+src/**/*.js
+src/**/*.d.ts
+!src/sqljs.d.ts
+scripts/**/*.js
+scripts/**/*.d.ts

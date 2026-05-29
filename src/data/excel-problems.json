@@ -1,0 +1,78 @@
+[
+  {
+    "id": "xls-loop-001",
+    "engine": "excel",
+    "title": "客単価をD列に入れる",
+    "category": "ループ",
+    "difficulty": 2,
+    "prompt": "A列の売上をB列の客数で割り、D列に客単価を入れる Sub Main を書くんな",
+    "hints": ["For i = 2 To 4 を使うんな", "Cells(i, 4).Value に代入するんな"],
+    "answer": "Sub Main()\nDim i As Long\nFor i = 2 To 4\nCells(i, 4).Value = Cells(i, 1).Value / Cells(i, 2).Value\nNext\nEnd Sub",
+    "tags": ["For", "Cells"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialSheet": {
+      "A1": "売上",
+      "B1": "客数",
+      "D1": "客単価",
+      "A2": 1000,
+      "B2": 5,
+      "A3": 1200,
+      "B3": 6,
+      "A4": 900,
+      "B4": 3
+    },
+    "judge": {
+      "type": "cell",
+      "expected": {
+        "D2": 200,
+        "D3": 200,
+        "D4": 300
+      }
+    }
+  },
+  {
+    "id": "xls-debug-001",
+    "engine": "excel",
+    "title": "名前を整形して表示する",
+    "category": "文字列",
+    "difficulty": 1,
+    "prompt": "A2 の名前を大文字化し、文字数を付けて Debug.Print する Sub Main を書くんな",
+    "hints": ["UCase と Len を使うんな", "文字列連結は & を使うんな"],
+    "answer": "Sub Main()\nDim nameText As String\nnameText = Cells(2, 1).Value\nDebug.Print UCase(nameText) & \"-\" & Len(nameText)\nEnd Sub",
+    "tags": ["Debug.Print", "UCase", "Len"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialSheet": {
+      "A1": "name",
+      "A2": "sato"
+    },
+    "judge": {
+      "type": "debug",
+      "expectedLines": ["SATO-4"]
+    }
+  },
+  {
+    "id": "xls-return-001",
+    "engine": "excel",
+    "title": "配列の合計を返す",
+    "category": "配列",
+    "difficulty": 2,
+    "prompt": "1始まり配列に 2, 4, 6 を入れて合計を返す Function Main を書くんな",
+    "hints": ["Dim nums(1 To 3) を使うんな", "Function の戻り値は Main = total で返すんな"],
+    "answer": "Function Main()\nDim nums(1 To 3) As Long\nDim i As Long\nDim total As Long\nnums(1) = 2\nnums(2) = 4\nnums(3) = 6\nFor i = 1 To 3\ntotal = total + nums(i)\nNext\nMain = total\nEnd Function",
+    "tags": ["Function", "Array", "For"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialSheet": {
+      "A1": "dummy"
+    },
+    "judge": {
+      "type": "return",
+      "expected": 12
+    }
+  }
+]
