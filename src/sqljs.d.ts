@@ -17,6 +17,7 @@ declare module 'sql.js' {
     run(sql: string): void;
     prepare(sql: string): Statement;
     exec(sql: string): ExecResult[];
+    close(): void;
   }
 
   export default function initSqlJs(config?: {

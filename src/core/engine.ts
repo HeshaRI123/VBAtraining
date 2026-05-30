@@ -252,6 +252,7 @@ interface VbaHost {
   readonly engine: EngineType;
   getGlobal(name: string, context: EvaluationContext): RuntimeValue | undefined;
   snapshot(problem: ProblemDefinition): HostSnapshot;
+  dispose?(): void;
   prepareJudgeQuery?(sql: string): void;
   readQueryRows?(sql: string): unknown[][];
   dLookup?(fieldName: string, domain: string, criteria?: string): RuntimeValue;
@@ -293,6 +294,7 @@ const KEYWORDS = new Set([
   'byref',
   'byval',
   'case',
+  'call',
   'debug',
   'dim',
   'do',
@@ -715,6 +717,9 @@ class Parser {
     if (this.checkKeyword('set')) {
       return this.parseAssignment(true);
     }
+    if (this.checkKeyword('call')) {
+      return this.parseCallStatement();
+    }
     return this.parseExpressionOrAssignment();
   }
 
@@ -965,6 +970,9 @@ class Parser {
       this.index = checkpoint;
     }
     this.index = checkpoint;
+    if (this.isBareCallStart()) {
+      return this.parseBareCallStatement();
+    }
     const expression = this.parseExpression();
     this.consumeStatementEnd();
     return {
@@ -972,6 +980,65 @@ class Parser {
       expression,
       range: expression.range
     };
+  }
+
+  private parseCallStatement(): ExpressionStatementNode {
+    const start = this.expectKeyword('call');
+    const expression = this.parseCallTarget();
+    this.consumeStatementEnd();
+    return {
+      kind: 'ExpressionStatement',
+      expression,
+      range: mergeRanges(start.range, expression.range)
+    };
+  }
+
+  private parseBareCallStatement(): ExpressionStatementNode {
+    const expression = this.parseCallTarget();
+    this.consumeStatementEnd();
+    return {
+      kind: 'ExpressionStatement',
+      expression,
+      range: expression.range
+    };
+  }
+
+  private parseCallTarget(): ExpressionNode {
+    const callee = this.parsePrimaryChain();
+    if (callee.kind === 'CallExpression') {
+      return callee;
+    }
+    const args: ExpressionNode[] = [];
+    if (!this.check('newline') && !this.check('eof')) {
+      do {
+        args.push(this.parseExpression());
+      } while (this.matchPunctuation(','));
+    }
+    return {
+      kind: 'CallExpression',
+      callee,
+      args,
+      range: args.length > 0 ? mergeRanges(callee.range, args[args.length - 1].range) : callee.range
+    };
+  }
+
+  private isBareCallStart(): boolean {
+    if (!this.check('identifier') && !this.check('keyword')) {
+      return false;
+    }
+    let lookaheadIndex = this.index + 1;
+    while (
+      this.tokens[lookaheadIndex]?.type === 'punctuation' &&
+      this.tokens[lookaheadIndex].value === '.' &&
+      (this.tokens[lookaheadIndex + 1]?.type === 'identifier' || this.tokens[lookaheadIndex + 1]?.type === 'keyword')
+    ) {
+      lookaheadIndex += 2;
+    }
+    const next = this.tokens[lookaheadIndex];
+    if (!next || next.type === 'newline' || next.type === 'eof' || (next.type === 'punctuation' && next.value === '(')) {
+      return false;
+    }
+    return next.type === 'identifier' || next.type === 'keyword' || next.type === 'number' || next.type === 'string' || (next.type === 'punctuation' && next.value === '(');
   }
 
   private parseReferenceExpression(): ExpressionNode {
@@ -1131,6 +1198,7 @@ class Parser {
       this.consumeNewlines();
       return;
     }
+    throw new ParseError('文の終わりが必要なんな', this.peek().range);
   }
 
   private consumeNewlines(): void {
@@ -1534,6 +1602,10 @@ class Interpreter {
         const local = environment.lookup(expression.name);
         if (local) {
           return local.get();
+        }
+        const procedure = this.procedures.get(normalizeName(expression.name));
+        if (procedure) {
+          return this.invokeProcedure(procedure, []);
         }
         const global = this.context.globals.get(normalizeName(expression.name)) ?? this.context.host.getGlobal(expression.name, this.context);
         if (global !== undefined) {
@@ -2326,29 +2398,34 @@ class AccessHost implements VbaHost {
     let rowCount = 0;
     let estimatedBytes = 0;
 
-    if (initialDb) {
-      for (const [tableName, table] of Object.entries(initialDb)) {
-        tableDefinitions[tableName] = [...table.columns];
-        db.run(`CREATE TABLE ${quoteIdentifier(tableName)} (${table.columns.map((column) => `${quoteIdentifier(column)} NUMERIC`).join(', ')})`);
-        for (const row of table.rows) {
-          rowCount += 1;
-          estimatedBytes += JSON.stringify(row).length * 2;
-          if (rowCount > limits.maxRowsPerTable) {
-            throw new RuntimeError('初期テーブル行数が上限を超えたんな', undefined, 'MemoryLimit');
+    try {
+      if (initialDb) {
+        for (const [tableName, table] of Object.entries(initialDb)) {
+          tableDefinitions[tableName] = [...table.columns];
+          db.run(`CREATE TABLE ${quoteIdentifier(tableName)} (${table.columns.map((column) => `${quoteIdentifier(column)} NUMERIC`).join(', ')})`);
+          for (const row of table.rows) {
+            rowCount += 1;
+            estimatedBytes += JSON.stringify(row).length * 2;
+            if (rowCount > limits.maxRowsPerTable) {
+              throw new RuntimeError('初期テーブル行数が上限を超えたんな', undefined, 'MemoryLimit');
+            }
+            if (estimatedBytes > limits.maxEstimatedBytes) {
+              throw new RuntimeError('初期 DB サイズが大きすぎるんな', undefined, 'MemoryLimit');
+            }
+            const statement = db.prepare(
+              `INSERT INTO ${quoteIdentifier(tableName)} (${table.columns.map(quoteIdentifier).join(', ')}) VALUES (${table.columns.map(() => '?').join(', ')})`
+            );
+            statement.run(row);
+            statement.free();
           }
-          if (estimatedBytes > limits.maxEstimatedBytes) {
-            throw new RuntimeError('初期 DB サイズが大きすぎるんな', undefined, 'MemoryLimit');
-          }
-          const statement = db.prepare(
-            `INSERT INTO ${quoteIdentifier(tableName)} (${table.columns.map(quoteIdentifier).join(', ')}) VALUES (${table.columns.map(() => '?').join(', ')})`
-          );
-          statement.run(row);
-          statement.free();
         }
       }
-    }
 
-    return new AccessHost(db, limits, tableDefinitions);
+      return new AccessHost(db, limits, tableDefinitions);
+    } catch (error) {
+      db.close();
+      throw error;
+    }
   }
 
   getGlobal(name: string, _context: EvaluationContext): RuntimeValue | undefined {
@@ -2463,6 +2540,10 @@ class AccessHost implements VbaHost {
     };
   }
 
+  dispose(): void {
+    this.db.close();
+  }
+
   private runDomainQuery(
     fieldName: string,
     domain: string,
@@ -2483,12 +2564,13 @@ class AccessHost implements VbaHost {
     options: { forSelect: boolean; allowTop: boolean; includeRowId: boolean }
   ): string {
     const normalized = sql.trim();
-    if (/\bjoin\b/i.test(normalized) || /\bcreate\b/i.test(normalized) || /\balter\b/i.test(normalized) || /\bdrop\b/i.test(normalized)) {
+    if (testOutsideSqlStrings(normalized, /\b(?:join|create|alter|drop)\b/i)) {
       throw new RuntimeError('この SQL 構文は v0.1 の対象外なんな', undefined, 'UnsupportedSyntax');
     }
     let translated = normalized;
-    translated = translated.replace(/#([^#]+)#/g, (_match, value) => `'${value}'`);
-    translated = translated.replace(/\btrue\b/gi, '-1').replace(/\bfalse\b/gi, '0');
+    translated = replaceRegexOutsideSqlStrings(translated, /#([^#]+)#/g, (_match, value) => `'${value}'`);
+    translated = replaceRegexOutsideSqlStrings(translated, /\btrue\b/gi, () => '-1');
+    translated = replaceRegexOutsideSqlStrings(translated, /\bfalse\b/gi, () => '0');
     translated = replaceOutsideStrings(translated, '&', '||');
     translated = translated.replace(/\bLIKE\s+'([^']*)'/gi, (_match, pattern) => {
       const converted = String(pattern).replace(/\*/g, '%').replace(/\?/g, '_');
@@ -2496,7 +2578,7 @@ class AccessHost implements VbaHost {
     });
     translated = rewriteFunctionCalls(translated, 'Nz', (args) => `COALESCE(${args[0]}, ${args[1] ?? "''"})`);
     translated = rewriteFunctionCalls(translated, 'IIf', (args) => `CASE WHEN ${args[0]} THEN ${args[1]} ELSE ${args[2]} END`);
-    if (/\bformat\s*\(/i.test(translated)) {
+    if (testOutsideSqlStrings(translated, /\bformat\s*\(/i)) {
       throw new RuntimeError('Format は v0.1 では非対応なんな', undefined, 'UnsupportedSyntax');
     }
     if (options.allowTop) {
@@ -2514,8 +2596,9 @@ class AccessHost implements VbaHost {
 
   private translateExpression(criteria: string): string {
     let translated = criteria;
-    translated = translated.replace(/#([^#]+)#/g, (_match, value) => `'${value}'`);
-    translated = translated.replace(/\btrue\b/gi, '-1').replace(/\bfalse\b/gi, '0');
+    translated = replaceRegexOutsideSqlStrings(translated, /#([^#]+)#/g, (_match, value) => `'${value}'`);
+    translated = replaceRegexOutsideSqlStrings(translated, /\btrue\b/gi, () => '-1');
+    translated = replaceRegexOutsideSqlStrings(translated, /\bfalse\b/gi, () => '0');
     translated = replaceOutsideStrings(translated, '&', '||');
     translated = translated.replace(/\bLIKE\s+'([^']*)'/gi, (_match, pattern) => {
       const converted = String(pattern).replace(/\*/g, '%').replace(/\?/g, '_');
@@ -2532,22 +2615,64 @@ function quoteIdentifier(identifier: string): string {
 }
 
 function replaceOutsideStrings(source: string, target: string, replacement: string): string {
-  let inString = false;
-  let output = '';
-  for (let index = 0; index < source.length; index += 1) {
-    const char = source[index];
-    if (char === '\'') {
-      inString = !inString;
-      output += char;
+  return replaceRegexOutsideSqlStrings(source, new RegExp(escapeRegExp(target), 'g'), () => replacement);
+}
+
+function testOutsideSqlStrings(source: string, pattern: RegExp): boolean {
+  const flags = pattern.flags.replace('g', '');
+  const segmentPattern = new RegExp(pattern.source, flags);
+  return splitSqlStringSegments(source).some((segment) => !segment.inString && segmentPattern.test(segment.text));
+}
+
+function replaceRegexOutsideSqlStrings(source: string, pattern: RegExp, replacement: (...args: string[]) => string): string {
+  const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`;
+  const segmentPattern = new RegExp(pattern.source, flags);
+  return splitSqlStringSegments(source)
+    .map((segment) => {
+      if (segment.inString) {
+        return segment.text;
+      }
+      return segment.text.replace(segmentPattern, (...args) => replacement(...args.map(String)));
+    })
+    .join('');
+}
+
+function splitSqlStringSegments(source: string): Array<{ text: string; inString: boolean }> {
+  const pieces: Array<{ text: string; inString: boolean }> = [];
+  let index = 0;
+  let segmentStart = 0;
+  while (index < source.length) {
+    if (source[index] !== '\'') {
+      index += 1;
       continue;
     }
-    if (!inString && char === target) {
-      output += replacement;
-      continue;
+    if (segmentStart < index) {
+      pieces.push({ text: source.slice(segmentStart, index), inString: false });
     }
-    output += char;
+    let stringEnd = index + 1;
+    while (stringEnd < source.length) {
+      if (source[stringEnd] === '\'' && source[stringEnd + 1] === '\'') {
+        stringEnd += 2;
+        continue;
+      }
+      if (source[stringEnd] === '\'') {
+        stringEnd += 1;
+        break;
+      }
+      stringEnd += 1;
+    }
+    pieces.push({ text: source.slice(index, stringEnd), inString: true });
+    index = stringEnd;
+    segmentStart = index;
   }
-  return output;
+  if (segmentStart < source.length) {
+    pieces.push({ text: source.slice(segmentStart), inString: false });
+  }
+  return pieces;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function rewriteFunctionCalls(source: string, functionName: string, rewrite: (args: string[]) => string): string {
@@ -2843,10 +2968,11 @@ export async function runSubmission(
   source: string,
   limits: EngineLimits = DEFAULT_LIMITS
 ): Promise<RunResult> {
+  let host: VbaHost | undefined;
   try {
     const wrappedSource = wrapSource(problem, source);
     const module = parseModule(wrappedSource);
-    const host =
+    host =
       problem.engine === 'excel'
         ? new ExcelHost(problem.initialSheet, limits)
         : await AccessHost.create(problem.initialDb, limits);
@@ -2867,6 +2993,8 @@ export async function runSubmission(
       snapshot: {},
       durationMs: 0
     };
+  } finally {
+    host?.dispose?.();
   }
 }
 

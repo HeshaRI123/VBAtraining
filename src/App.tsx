@@ -37,6 +37,31 @@ function getResultLabel(result: ProgressResult): string {
   }
 }
 
+function createWorkerFailureResult(error: unknown): { runResult: RunResult; judgeResult: JudgeResult } {
+  const message = error instanceof Error ? error.message : 'Worker execution failed';
+  const runResult: RunResult = {
+    ok: false,
+    diagnostics: [
+      {
+        kind: message.includes('timed out') ? 'Timeout' : 'Runtime',
+        severity: 'error',
+        message: `実行ワーカーでエラーが起きたんな: ${message}`
+      }
+    ],
+    debugLines: [],
+    snapshot: {},
+    durationMs: 0
+  };
+  return {
+    runResult,
+    judgeResult: {
+      passed: false,
+      summary: '実行エラーで採点できなかったんな',
+      diagnostics: runResult.diagnostics
+    }
+  };
+}
+
 function getResultClass(result: ProgressResult): string {
   switch (result) {
     case 'correct':
@@ -150,7 +175,17 @@ export default function App() {
 
     setRunning(true);
     try {
-      const { runResult: nextRunResult, judgeResult: nextJudgeResult } = await workerRef.current.run(currentProblem, source);
+      let nextRunResult: RunResult;
+      let nextJudgeResult: JudgeResult;
+      try {
+        const result = await workerRef.current.run(currentProblem, source);
+        nextRunResult = result.runResult;
+        nextJudgeResult = result.judgeResult;
+      } catch (error) {
+        const result = createWorkerFailureResult(error);
+        nextRunResult = result.runResult;
+        nextJudgeResult = result.judgeResult;
+      }
       shouldRevealResultRef.current = true;
       setRunResult(nextRunResult);
       setJudge(nextJudgeResult);
@@ -175,7 +210,17 @@ export default function App() {
 
     setRunningExample(true);
     try {
-      const { runResult: nextRunResult, judgeResult: nextJudgeResult } = await workerRef.current.run(currentThemeExample, exampleSource);
+      let nextRunResult: RunResult;
+      let nextJudgeResult: JudgeResult;
+      try {
+        const result = await workerRef.current.run(currentThemeExample, exampleSource);
+        nextRunResult = result.runResult;
+        nextJudgeResult = result.judgeResult;
+      } catch (error) {
+        const result = createWorkerFailureResult(error);
+        nextRunResult = result.runResult;
+        nextJudgeResult = result.judgeResult;
+      }
       setExampleRunResult(nextRunResult);
       setExampleJudge(nextJudgeResult);
     } finally {
