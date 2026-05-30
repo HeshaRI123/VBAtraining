@@ -2186,11 +2186,15 @@ let sqlJsPromise: Promise<SqlJsStatic> | null = null;
 
 async function getSqlJs(): Promise<SqlJsStatic> {
   if (!sqlJsPromise) {
+    const runningOnNode = Boolean((globalThis as { process?: { versions?: { node?: string } } }).process?.versions?.node);
+    const nodeUrlModule = 'node:url';
+    const nodeFileURLToPath = runningOnNode
+      ? ((await import(/* @vite-ignore */ nodeUrlModule)) as { fileURLToPath: (url: URL) => string }).fileURLToPath
+      : undefined;
     sqlJsPromise = initSqlJs({
       locateFile: (file: string) => {
-        const runningOnNode = Boolean((globalThis as { process?: { versions?: { node?: string } } }).process?.versions?.node);
-        if (runningOnNode) {
-          return new URL(`../../node_modules/sql.js/dist/${file}`, import.meta.url).pathname;
+        if (nodeFileURLToPath) {
+          return nodeFileURLToPath(new URL(`../../node_modules/sql.js/dist/${file}`, import.meta.url));
         }
         return `/sql/${file}`;
       }
