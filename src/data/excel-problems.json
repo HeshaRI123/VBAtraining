@@ -8,6 +8,44 @@
     "prompt": "A列の売上をB列の客数で割り、D列に客単価を入れる Sub Main を書くんな",
     "hints": ["For i = 2 To 4 を使うんな", "Cells(i, 4).Value に代入するんな"],
     "answer": "Sub Main()\nDim i As Long\nFor i = 2 To 4\nCells(i, 4).Value = Cells(i, 1).Value / Cells(i, 2).Value\nNext\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、同じ計算を複数行に繰り返し適用する流れを身につけるんな。売上と客数を読み取り、計算結果を別の列へ書き戻す練習なんな。",
+      "steps": [
+        "まず繰り返し用の変数 i を用意するんな。",
+        "2 行目から 4 行目までを For で順番に回すんな。",
+        "Cells(i, 1).Value と Cells(i, 2).Value を使って計算し、Cells(i, 4).Value に入れるんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "For",
+          "kind": "statement",
+          "description": "決まった回数だけ処理を繰り返す文なんな。",
+          "example": "For i = 2 To 4"
+        },
+        {
+          "name": "Cells",
+          "kind": "function",
+          "description": "行番号と列番号でセルを指定するんな。",
+          "example": "Cells(i, 1).Value"
+        },
+        {
+          "name": "Value",
+          "kind": "property",
+          "description": "セルの中身を読み書きするプロパティなんな。",
+          "example": "Cells(i, 4).Value = 200"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "Cells(i, 1).Value の 1 は何を表すんな。",
+          "answer": "列番号なんな。1 は A 列、2 は B 列、4 は D 列なんな。"
+        },
+        {
+          "question": "複数行に同じ処理をしたいとき、まず考える文は何なんな。",
+          "answer": "For ... Next なんな。開始値と終了値を決めて繰り返すんな。"
+        }
+      ]
+    },
     "tags": ["For", "Cells"],
     "entryMode": "fullModule",
     "entryPoint": "Main",
@@ -41,6 +79,50 @@
     "prompt": "A2 の名前を大文字化し、文字数を付けて Debug.Print する Sub Main を書くんな",
     "hints": ["UCase と Len を使うんな", "文字列連結は & を使うんな"],
     "answer": "Sub Main()\nDim nameText As String\nnameText = Cells(2, 1).Value\nDebug.Print UCase(nameText) & \"-\" & Len(nameText)\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、文字列を取り出して加工し、Debug.Print で確認する流れを練習するんな。関数を組み合わせて 1 行で表現する感覚が大事なんな。",
+      "steps": [
+        "A2 の値を変数へ入れて、扱いやすい形にするんな。",
+        "UCase で大文字化し、Len で文字数を取るんな。",
+        "文字列連結は & を使って、最後に Debug.Print で表示するんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "UCase",
+          "kind": "function",
+          "description": "文字列を大文字へ変換する関数なんな。",
+          "example": "UCase(nameText)"
+        },
+        {
+          "name": "Len",
+          "kind": "function",
+          "description": "文字列の長さを返す関数なんな。",
+          "example": "Len(nameText)"
+        },
+        {
+          "name": "Debug.Print",
+          "kind": "statement",
+          "description": "確認したい値を出力するときに使うんな。",
+          "example": "Debug.Print UCase(nameText)"
+        },
+        {
+          "name": "&",
+          "kind": "operator",
+          "description": "文字列どうしをつなげる演算子なんな。",
+          "example": "UCase(nameText) & \"-\" & Len(nameText)"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "文字列を大文字にしたいときに使う関数は何なんな。",
+          "answer": "UCase なんな。小文字化なら LCase なんな。"
+        },
+        {
+          "question": "文字数を取りたいときに使う関数は何なんな。",
+          "answer": "Len なんな。Len(文字列) で長さが返るんな。"
+        }
+      ]
+    },
     "tags": ["Debug.Print", "UCase", "Len"],
     "entryMode": "fullModule",
     "entryPoint": "Main",
@@ -63,6 +145,44 @@
     "prompt": "1始まり配列に 2, 4, 6 を入れて合計を返す Function Main を書くんな",
     "hints": ["Dim nums(1 To 3) を使うんな", "Function の戻り値は Main = total で返すんな"],
     "answer": "Function Main()\nDim nums(1 To 3) As Long\nDim i As Long\nDim total As Long\nnums(1) = 2\nnums(2) = 4\nnums(3) = 6\nFor i = 1 To 3\ntotal = total + nums(i)\nNext\nMain = total\nEnd Function",
+    "lesson": {
+      "overview": "この問題では、1 始まりの配列を作り、順番に値を足し合わせて Function の戻り値として返す基本形を身につけるんな。",
+      "steps": [
+        "Dim nums(1 To 3) As Long で 1 から 3 までの配列を用意するんな。",
+        "nums(1) から nums(3) に値を順番に入れるんな。",
+        "For で合計し、最後は Main = total で戻り値を返すんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "Function",
+          "kind": "statement",
+          "description": "戻り値を返す手続きを定義するときに使うんな。",
+          "example": "Function Main()"
+        },
+        {
+          "name": "Dim nums(1 To 3)",
+          "kind": "syntax",
+          "description": "1 始まりの配列を宣言する書き方なんな。",
+          "example": "Dim nums(1 To 3) As Long"
+        },
+        {
+          "name": "Main = total",
+          "kind": "syntax",
+          "description": "Function の結果を返す書き方なんな。",
+          "example": "Main = total"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "Function で結果を返すとき、Return ではなく何に代入するんな。",
+          "answer": "関数名そのものなんな。この問題なら Main = total なんな。"
+        },
+        {
+          "question": "Dim nums(1 To 3) As Long は何番から何番まで使える配列なんな。",
+          "answer": "1 から 3 までなんな。今回のエンジンは 1 始まりの配列を想定しているんな。"
+        }
+      ]
+    },
     "tags": ["Function", "Array", "For"],
     "entryMode": "fullModule",
     "entryPoint": "Main",

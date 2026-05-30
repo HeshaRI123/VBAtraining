@@ -89,6 +89,34 @@ export interface DatabaseState {
   [tableName: string]: TableState;
 }
 
+export type LessonFocusItemKind =
+  | 'statement'
+  | 'function'
+  | 'object'
+  | 'method'
+  | 'property'
+  | 'operator'
+  | 'syntax';
+
+export interface LessonFocusItem {
+  name: string;
+  kind: LessonFocusItemKind;
+  description: string;
+  example: string;
+}
+
+export interface LessonReviewCard {
+  question: string;
+  answer: string;
+}
+
+export interface LessonContent {
+  overview: string;
+  steps: string[];
+  focusItems: LessonFocusItem[];
+  reviewCards: LessonReviewCard[];
+}
+
 export interface ProblemDefinition {
   id: string;
   engine: EngineType;
@@ -98,6 +126,7 @@ export interface ProblemDefinition {
   prompt: string;
   hints: string[];
   answer: string;
+  lesson: LessonContent;
   tags: string[];
   entryMode: EntryMode;
   entryPoint: string;

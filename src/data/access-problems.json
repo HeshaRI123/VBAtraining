@@ -8,6 +8,50 @@
     "prompt": "顧客テーブルの status が 未 の行を 済 に更新する Sub Main を書くんな",
     "hints": ["OpenRecordset で開くんな", "Edit と Update を挟むんな"],
     "answer": "Sub Main()\nDim rs As Variant\nSet rs = CurrentDb.OpenRecordset(\"顧客\")\nDo While Not rs.EOF\nIf rs.Fields(\"status\") = \"未\" Then\nrs.Edit\nrs.Fields(\"status\") = \"済\"\nrs.Update\nEnd If\nrs.MoveNext\nLoop\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、Access の Recordset を 1 行ずつ読みながら条件に合う行だけ更新する流れを練習するんな。Edit と Update の順番が大事なんな。",
+      "steps": [
+        "CurrentDb.OpenRecordset で 顧客 テーブルを開いて rs に入れるんな。",
+        "Do While Not rs.EOF で末尾まで順番に見るんな。",
+        "status が 未 のときだけ Edit、Fields 代入、Update の順で更新するんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "OpenRecordset",
+          "kind": "method",
+          "description": "テーブルや SELECT 結果を Recordset として開くんな。",
+          "example": "Set rs = CurrentDb.OpenRecordset(\"顧客\")"
+        },
+        {
+          "name": "EOF",
+          "kind": "property",
+          "description": "もう読む行がないときに True になるんな。",
+          "example": "Do While Not rs.EOF"
+        },
+        {
+          "name": "Edit",
+          "kind": "method",
+          "description": "現在行の編集を始める合図なんな。",
+          "example": "rs.Edit"
+        },
+        {
+          "name": "Update",
+          "kind": "method",
+          "description": "Edit 中の変更を確定するんな。",
+          "example": "rs.Update"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "Recordset の現在行を書き換える前に呼ぶメソッドは何なんな。",
+          "answer": "Edit なんな。そのあと Fields へ代入して Update で確定するんな。"
+        },
+        {
+          "question": "Do While Not rs.EOF の EOF は何を確かめているんな。",
+          "answer": "末尾まで読み終わったかどうかなんな。EOF が True ならもう次の行はないんな。"
+        }
+      ]
+    },
     "tags": ["Recordset", "Edit", "Update"],
     "entryMode": "fullModule",
     "entryPoint": "Main",
@@ -33,6 +77,44 @@
     "prompt": "status が 未 の件数を DCount で数えて Debug.Print するんな",
     "hints": ["DCount を使うんな", "criteria は status = '未' なんな"],
     "answer": "Sub Main()\nDebug.Print DCount(\"*\", \"顧客\", \"status = '未'\")\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、Access のドメイン関数で条件付き集計を手早く書く感覚を身につけるんな。SQL を全部書かなくても件数確認ができるんな。",
+      "steps": [
+        "DCount の 1 つ目に数えたい対象を入れるんな。全部なら * なんな。",
+        "2 つ目にテーブル名、3 つ目に条件文字列を入れるんな。",
+        "返ってきた件数を Debug.Print で表示するんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "DCount",
+          "kind": "function",
+          "description": "条件に合う件数を数える Access の関数なんな。",
+          "example": "DCount(\"*\", \"顧客\", \"status = '未'\")"
+        },
+        {
+          "name": "DLookup",
+          "kind": "function",
+          "description": "条件に合う 1 件の値を取り出す関数なんな。",
+          "example": "DLookup(\"name\", \"顧客\", \"id = 1\")"
+        },
+        {
+          "name": "DSum",
+          "kind": "function",
+          "description": "条件に合う数値の合計を出す関数なんな。",
+          "example": "DSum(\"amount\", \"売上\", \"status = '済'\")"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "DCount の第 1 引数に * を入れるのはどんな意味なんな。",
+          "answer": "特定の列ではなく、条件に合うレコード件数そのものを数える意味なんな。"
+        },
+        {
+          "question": "DLookup と DSum はそれぞれ何を返す関数なんな。",
+          "answer": "DLookup は 1 件の値、DSum は条件に合う数値の合計なんな。"
+        }
+      ]
+    },
     "tags": ["DCount", "Debug.Print"],
     "entryMode": "fullModule",
     "entryPoint": "Main",
@@ -57,6 +139,38 @@
     "prompt": "Main は何もしなくてよいので、判定クエリ結果を確認できる状態にするんな",
     "hints": ["空の Sub Main でも通るんな", "判定は Access SQL 変換の確認なんな"],
     "answer": "Sub Main()\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、Access SQL の TOP と LIKE がどう判定に使われるかを知るのが目的なんな。コードを書く量は少ないけれど、問題の読み方を学ぶ回なんな。",
+      "steps": [
+        "判定 SQL が何を見ているかを先に読むんな。",
+        "TOP 2 は先頭 2 件、LIKE '未*' は 未 で始まる文字列を探す意味なんな。",
+        "この問題では Main は空でもよく、判定クエリの意図を理解できれば十分なんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "TOP",
+          "kind": "syntax",
+          "description": "先頭から必要件数だけ取り出す SQL の書き方なんな。",
+          "example": "SELECT TOP 2 name FROM 顧客"
+        },
+        {
+          "name": "LIKE",
+          "kind": "operator",
+          "description": "文字の並びが条件に合うかを調べる SQL の比較なんな。",
+          "example": "status LIKE '未*'"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "Access SQL の TOP 2 は何件を返すんな。",
+          "answer": "並び順が決まったあとで先頭 2 件なんな。"
+        },
+        {
+          "question": "LIKE '未*' はどんな値に一致するんな。",
+          "answer": "未 で始まる文字列なんな。たとえば 未確認 や 未発送 に一致するんな。"
+        }
+      ]
+    },
     "tags": ["Query", "TOP", "Like"],
     "entryMode": "fullModule",
     "entryPoint": "Main",
@@ -83,6 +197,44 @@
     "prompt": "CurrentDb.Execute で 未 を 再確認 に更新するんな",
     "hints": ["IIf を SQL 文字列内で使うんな", "Execute に UPDATE 文を渡すんな"],
     "answer": "Sub Main()\nCurrentDb.Execute(\"UPDATE 顧客 SET status = IIf(status = '未', '再確認', status)\")\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、CurrentDb.Execute で SQL を直接実行し、IIf で条件ごとに値を切り替える考え方を練習するんな。",
+      "steps": [
+        "CurrentDb.Execute の中へ UPDATE 文を文字列で入れるんな。",
+        "SET status = ... の右側で IIf を使い、未 のときだけ 再確認 に変えるんな。",
+        "条件に合わない行は元の status をそのまま残すんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "CurrentDb",
+          "kind": "object",
+          "description": "現在の Access データベースを表すオブジェクトなんな。",
+          "example": "CurrentDb.Execute(\"UPDATE ...\")"
+        },
+        {
+          "name": "Execute",
+          "kind": "method",
+          "description": "SQL 文を実行してテーブル内容を更新するんな。",
+          "example": "CurrentDb.Execute(\"UPDATE 顧客 SET ...\")"
+        },
+        {
+          "name": "IIf",
+          "kind": "function",
+          "description": "条件によって返す値を切り替える Access SQL の関数なんな。",
+          "example": "IIf(status = '未', '再確認', status)"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "CurrentDb.Execute はどんな場面で使うんな。",
+          "answer": "UPDATE や INSERT などの SQL をそのまま実行したいときなんな。"
+        },
+        {
+          "question": "IIf(condition, a, b) は condition が真のとき何を返すんな。",
+          "answer": "2 つ目の引数 a を返すんな。偽なら 3 つ目の b なんな。"
+        }
+      ]
+    },
     "tags": ["Execute", "IIf"],
     "entryMode": "fullModule",
     "entryPoint": "Main",

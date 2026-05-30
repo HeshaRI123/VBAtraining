@@ -2656,6 +2656,7 @@ export function getEngineCapabilities(engine: EngineType): EngineCapabilityManif
 
 export function validateProblem(problem: ProblemDefinition): ValidationResult {
   const diagnostics: Diagnostic[] = [];
+  const lesson = problem.lesson;
   if (!problem.id.trim()) {
     diagnostics.push({ kind: 'Validation', severity: 'error', message: 'problem.id は必須なんな' });
   }
@@ -2673,6 +2674,28 @@ export function validateProblem(problem: ProblemDefinition): ValidationResult {
   }
   if ((problem.judge.type === 'table' || problem.judge.type === 'query') && problem.engine !== 'access') {
     diagnostics.push({ kind: 'Validation', severity: 'error', message: 'table/query 判定は Access 問題だけなんな' });
+  }
+  if (!lesson) {
+    diagnostics.push({ kind: 'Validation', severity: 'error', message: 'lesson は必須なんな' });
+  } else {
+    if (!lesson.overview.trim()) {
+      diagnostics.push({ kind: 'Validation', severity: 'error', message: 'lesson.overview は必須なんな' });
+    }
+    if (!lesson.steps.length || lesson.steps.some((step) => !step.trim())) {
+      diagnostics.push({ kind: 'Validation', severity: 'error', message: 'lesson.steps は 1 件以上の説明が必要なんな' });
+    }
+    if (!lesson.focusItems.length) {
+      diagnostics.push({ kind: 'Validation', severity: 'error', message: 'lesson.focusItems は 1 件以上必要なんな' });
+    }
+    if (lesson.focusItems.some((item) => !item.name.trim() || !item.description.trim() || !item.example.trim())) {
+      diagnostics.push({ kind: 'Validation', severity: 'error', message: 'lesson.focusItems の各項目には name/description/example が必要なんな' });
+    }
+    if (!lesson.reviewCards.length) {
+      diagnostics.push({ kind: 'Validation', severity: 'error', message: 'lesson.reviewCards は 1 件以上必要なんな' });
+    }
+    if (lesson.reviewCards.some((card) => !card.question.trim() || !card.answer.trim())) {
+      diagnostics.push({ kind: 'Validation', severity: 'error', message: 'lesson.reviewCards の各項目には question/answer が必要なんな' });
+    }
   }
   try {
     parseModule(wrapSource(problem, problem.answer));
