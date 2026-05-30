@@ -5,7 +5,7 @@
     "title": "未処理ステータスを更新する",
     "category": "Recordset",
     "difficulty": 3,
-    "prompt": "顧客テーブルの status が 未 の行を 済 に更新する Sub Main を書くんな",
+    "prompt": "Recordset で顧客テーブルを1行ずつ見て、status が 未 の行を 済 に更新する Sub Main を書くんな",
     "hints": ["OpenRecordset で開くんな", "Edit と Update を挟むんな"],
     "answer": "Sub Main()\nDim rs As Variant\nSet rs = CurrentDb.OpenRecordset(\"顧客\")\nDo While Not rs.EOF\nIf rs.Fields(\"status\") = \"未\" Then\nrs.Edit\nrs.Fields(\"status\") = \"済\"\nrs.Update\nEnd If\nrs.MoveNext\nLoop\nEnd Sub",
     "lesson": {
@@ -194,7 +194,7 @@
     "title": "IIf を使って状態を一括更新する",
     "category": "SQL",
     "difficulty": 3,
-    "prompt": "CurrentDb.Execute で 未 を 再確認 に更新するんな",
+    "prompt": "CurrentDb.Execute に IIf を含む UPDATE 文を渡し、未 を 再確認 に更新するんな",
     "hints": ["IIf を SQL 文字列内で使うんな", "Execute に UPDATE 文を渡すんな"],
     "answer": "Sub Main()\nCurrentDb.Execute(\"UPDATE 顧客 SET status = IIf(status = '未', '再確認', status)\")\nEnd Sub",
     "lesson": {

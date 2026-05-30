@@ -5,7 +5,7 @@
     "title": "客単価をD列に入れる",
     "category": "ループ",
     "difficulty": 2,
-    "prompt": "A列の売上をB列の客数で割り、D列に客単価を入れる Sub Main を書くんな",
+    "prompt": "2行目から4行目まで For で繰り返し、A列の売上をB列の客数で割ってD列に客単価を入れる Sub Main を書くんな",
     "hints": ["For i = 2 To 4 を使うんな", "Cells(i, 4).Value に代入するんな"],
     "answer": "Sub Main()\nDim i As Long\nFor i = 2 To 4\nCells(i, 4).Value = Cells(i, 1).Value / Cells(i, 2).Value\nNext\nEnd Sub",
     "lesson": {
@@ -142,7 +142,7 @@
     "title": "配列の合計を返す",
     "category": "配列",
     "difficulty": 2,
-    "prompt": "1始まり配列に 2, 4, 6 を入れて合計を返す Function Main を書くんな",
+    "prompt": "1始まり配列に 2, 4, 6 を入れ、For で合計して返す Function Main を書くんな",
     "hints": ["Dim nums(1 To 3) を使うんな", "Function の戻り値は Main = total で返すんな"],
     "answer": "Function Main()\nDim nums(1 To 3) As Long\nDim i As Long\nDim total As Long\nnums(1) = 2\nnums(2) = 4\nnums(3) = 6\nFor i = 1 To 3\ntotal = total + nums(i)\nNext\nMain = total\nEnd Function",
     "lesson": {
