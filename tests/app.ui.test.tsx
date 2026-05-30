@@ -122,25 +122,56 @@ afterEach(() => {
 });
 
 describe('App UI', () => {
-  it('問題初期表示時に導入パネルが開いている', async () => {
+  it('問題初期表示時にテーマ例題のなぞり解きが開いている', async () => {
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: 'この問題の進め方' })).toBeTruthy();
-    expect(screen.getByText(/同じ計算を複数行に繰り返し適用/)).toBeTruthy();
-    expect(screen.getByText('使うもの')).toBeTruthy();
-    expect(screen.getByText('進め方')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'ループのなぞり解き' })).toBeTruthy();
+    expect(screen.getByText('テーマ例題 / ループ')).toBeTruthy();
+    expect(screen.getByText('なぞり解き')).toBeTruthy();
+    expect(screen.getByText('例題コード')).toBeTruthy();
   });
 
-  it('書いてみるで導入パネルが閉じ、問題切り替えで再表示される', async () => {
+  it('例題を飛ばすで導入パネルが閉じ、問題切り替えで再表示される', async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await screen.findByRole('heading', { name: 'この問題の進め方' });
-    await user.click(screen.getByRole('button', { name: '書いてみる' }));
-    expect(screen.queryByRole('heading', { name: 'この問題の進め方' })).toBeNull();
+    await screen.findByRole('heading', { name: 'ループのなぞり解き' });
+    await user.click(screen.getByRole('button', { name: '例題を飛ばす' }));
+    expect(screen.queryByRole('heading', { name: 'ループのなぞり解き' })).toBeNull();
 
     await user.click(screen.getByRole('button', { name: /名前を整形して表示する/ }));
-    expect(await screen.findByRole('heading', { name: 'この問題の進め方' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: '文字列のなぞり解き' })).toBeTruthy();
+  });
+
+  it('例題を採点しても進捗保存せず、合格後に本問へ進める', async () => {
+    const user = userEvent.setup();
+    runMock.mockImplementation(() =>
+      createRunResponse(
+        {
+          ok: true,
+          diagnostics: [],
+          debugLines: [],
+          returnValue: undefined,
+          snapshot: { sheet: { C2: 20, C3: 30 } },
+          durationMs: 15
+        },
+        {
+          passed: true,
+          summary: 'セル状態が一致したんな',
+          diagnostics: []
+        }
+      )
+    );
+
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: '例題を採点' }));
+
+    expect(await screen.findByText('セル状態が一致したんな')).toBeTruthy();
+    expect(saveAttemptMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: '本問を書く' }));
+    expect(screen.queryByRole('heading', { name: 'ループのなぞり解き' })).toBeNull();
   });
 
   it('ヒントと模範解答を個別表示できる', async () => {
@@ -148,7 +179,7 @@ describe('App UI', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: /名前を整形して表示する/ }));
-    await screen.findByText(/文字列を取り出して加工/);
+    await screen.findByRole('heading', { name: '文字列のなぞり解き' });
 
     await user.click(screen.getByRole('button', { name: 'ヒント' }));
     expect(screen.getByText('UCase と Len を使うんな')).toBeTruthy();

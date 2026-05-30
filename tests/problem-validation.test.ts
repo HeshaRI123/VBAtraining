@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { validateProblem } from '../src/core/engine';
 import type { ProblemDefinition } from '../src/core/model';
 import { problems } from '../src/data/problems';
+import { getThemeExample, themeExamples } from '../src/data/theme-examples';
 
 function cloneProblem(problemId: string): ProblemDefinition {
   const problem = problems.find((item) => item.id === problemId);
@@ -43,5 +44,19 @@ describe('problem lesson validation', () => {
     const diagnostics = problems.flatMap((problem) => validateProblem(problem).diagnostics);
 
     expect(diagnostics).toEqual([]);
+  });
+
+  it('テーマ例題は全件 validation を通る', () => {
+    const diagnostics = themeExamples.flatMap((example) => validateProblem(example).diagnostics);
+
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('収録済み問題の engine と category に対応するテーマ例題がある', () => {
+    const missingThemes = problems
+      .filter((problem) => !getThemeExample(problem.engine, problem.category))
+      .map((problem) => `${problem.engine}:${problem.category}`);
+
+    expect(missingThemes).toEqual([]);
   });
 });

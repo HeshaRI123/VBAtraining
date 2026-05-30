@@ -253,8 +253,48 @@ button {
   margin-top: 16px;
 }
 
-.lesson-grid h4 {
+.theme-example-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.lesson-grid h4,
+.theme-example-grid h4,
+.example-editor h4 {
   margin: 0 0 12px;
+}
+
+.theme-example-box {
+  border-color: rgba(186, 111, 45, 0.32);
+  background: rgba(255, 250, 244, 0.94);
+}
+
+.example-editor {
+  margin-top: 18px;
+}
+
+.example-result {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(177, 140, 92, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.example-result.success {
+  border-color: rgba(66, 153, 113, 0.26);
+  background: rgba(240, 250, 246, 0.9);
+}
+
+.example-result p {
+  margin: 6px 0 0;
+  color: #625744;
 }
 
 .focus-list,
@@ -396,6 +436,10 @@ button {
   .lesson-grid {
     grid-template-columns: 1fr;
   }
+
+  .theme-example-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -409,7 +453,8 @@ button {
   .editor-header,
   .lesson-header,
   .review-actions,
-  .focus-item-header {
+  .focus-item-header,
+  .example-result {
     flex-direction: column;
     align-items: stretch;
   }

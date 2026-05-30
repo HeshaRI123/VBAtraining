@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import type { JudgeResult, ProblemDefinition, ProgressRecord, ProgressResult, RunResult } from './core/model';
 import { getProblemsByEngine, problems } from './data/problems';
+import { getThemeExample } from './data/theme-examples';
 import { listProgressRecords, saveAttempt } from './core/storage';
 import { createProblemAutocompletion } from './editor/autocomplete';
 import { getReviewProblems } from './review';
@@ -61,13 +62,18 @@ export default function App() {
   const [hintCount, setHintCount] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showLessonIntro, setShowLessonIntro] = useState(true);
+  const [exampleSource, setExampleSource] = useState<string>(() => getThemeExample('excel', getProblemsByEngine('excel')[0]?.category ?? '')?.starter ?? '');
+  const [exampleRunResult, setExampleRunResult] = useState<RunResult | null>(null);
+  const [exampleJudge, setExampleJudge] = useState<JudgeResult | null>(null);
   const [reviewAnswers, setReviewAnswers] = useState<Record<string, boolean>>({});
   const [running, setRunning] = useState(false);
+  const [runningExample, setRunningExample] = useState(false);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [judge, setJudge] = useState<JudgeResult | null>(null);
 
   const engineProblems = getProblemsByEngine(engine);
   const currentProblem = engineProblems.find((problem) => problem.id === selectedProblemId) ?? engineProblems[0];
+  const currentThemeExample = currentProblem ? getThemeExample(currentProblem.engine, currentProblem.category) : undefined;
   const reviewProblems = getReviewProblems(problems, progressRecords, engine);
 
   useEffect(() => {
@@ -87,6 +93,9 @@ export default function App() {
     setHintCount(0);
     setShowAnswer(false);
     setShowLessonIntro(true);
+    setExampleSource(getThemeExample(nextProblem?.engine ?? engine, nextProblem?.category ?? '')?.starter ?? '');
+    setExampleRunResult(null);
+    setExampleJudge(null);
     setReviewAnswers({});
     setRunResult(null);
     setJudge(null);
@@ -101,6 +110,9 @@ export default function App() {
     setHintCount(0);
     setShowAnswer(false);
     setShowLessonIntro(true);
+    setExampleSource(getThemeExample(currentProblem.engine, currentProblem.category)?.starter ?? '');
+    setExampleRunResult(null);
+    setExampleJudge(null);
     setRunResult(null);
     setJudge(null);
     shouldRevealResultRef.current = false;
@@ -153,6 +165,21 @@ export default function App() {
       await refreshProgress();
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function handleRunExample(): Promise<void> {
+    if (!currentThemeExample || !workerRef.current) {
+      return;
+    }
+
+    setRunningExample(true);
+    try {
+      const { runResult: nextRunResult, judgeResult: nextJudgeResult } = await workerRef.current.run(currentThemeExample, exampleSource);
+      setExampleRunResult(nextRunResult);
+      setExampleJudge(nextJudgeResult);
+    } finally {
+      setRunningExample(false);
     }
   }
 
@@ -372,7 +399,88 @@ export default function App() {
                 </div>
               </div>
 
-              {showLessonIntro ? (
+              {showLessonIntro && currentThemeExample ? (
+                <div className="lesson-box theme-example-box">
+                  <div className="lesson-header">
+                    <div>
+                      <p className="eyebrow">テーマ例題 / {currentProblem.category}</p>
+                      <h3>{currentThemeExample.title}</h3>
+                    </div>
+                    <button className="ghost-button" onClick={() => setShowLessonIntro(false)} type="button">
+                      例題を飛ばす
+                    </button>
+                  </div>
+                  <p className="prompt-text">{currentThemeExample.prompt}</p>
+                  <div className="theme-example-grid">
+                    <section>
+                      <h4>なぞり解き</h4>
+                      <ol className="lesson-steps">
+                        {currentThemeExample.walkthroughSteps.map((step) => (
+                          <li key={step}>{step}</li>
+                        ))}
+                      </ol>
+                    </section>
+                    <section>
+                      <h4>確認すること</h4>
+                      <div className="focus-list">
+                        {currentThemeExample.lesson.focusItems.map((item) => (
+                          <article key={`${currentThemeExample.id}-${item.name}`} className="focus-item">
+                            <div className="focus-item-header">
+                              <strong>{item.name}</strong>
+                              <span className="tag subtle">{item.kind}</span>
+                            </div>
+                            <p>{item.description}</p>
+                            <code>{item.example}</code>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+
+                  <div className="example-editor">
+                    <div className="editor-header">
+                      <h4>例題コード</h4>
+                      <button className="primary-button" disabled={runningExample} onClick={() => void handleRunExample()} type="button">
+                        {runningExample ? '例題を採点中...' : '例題を採点'}
+                      </button>
+                    </div>
+                    <CodeMirror
+                      value={exampleSource}
+                      height="240px"
+                      theme="light"
+                      basicSetup={{
+                        lineNumbers: true,
+                        foldGutter: false,
+                        autocompletion: false
+                      }}
+                      extensions={[createProblemAutocompletion(currentThemeExample)]}
+                      onChange={(value) => setExampleSource(value)}
+                    />
+                  </div>
+
+                  <div className={exampleJudge?.passed ? 'example-result success' : 'example-result'}>
+                    <div>
+                      <strong>例題の採点結果</strong>
+                      <p>{exampleJudge?.summary ?? 'まだ例題を採点していないんな'}</p>
+                    </div>
+                    {exampleJudge?.passed ? (
+                      <button className="primary-button" onClick={() => setShowLessonIntro(false)} type="button">
+                        本問を書く
+                      </button>
+                    ) : null}
+                  </div>
+                  {exampleRunResult?.diagnostics.length ? (
+                    <div className="diagnostics">
+                      {exampleRunResult.diagnostics.map((diagnostic, index) => (
+                        <div key={`${diagnostic.message}-${index}`} className="diagnostic-item">
+                          <strong>{diagnostic.kind}</strong>
+                          <span>{diagnostic.message}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : showLessonIntro ? (
                 <div className="lesson-box">
                   <div className="lesson-header">
                     <div>

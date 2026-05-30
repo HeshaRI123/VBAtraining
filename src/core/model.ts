@@ -136,6 +136,11 @@ export interface ProblemDefinition {
   initialDb?: DatabaseState;
 }
 
+export interface ThemeExampleDefinition extends ProblemDefinition {
+  starter: string;
+  walkthroughSteps: string[];
+}
+
 export interface ProgressRecord {
   problemId: string;
   engine: EngineType;
