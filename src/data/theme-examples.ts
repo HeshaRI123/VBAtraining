@@ -338,6 +338,103 @@ export const themeExamples: ThemeExampleDefinition[] = [
       table: '顧客',
       expectedRows: [[1, 'A', '済'], [2, 'B', '済']]
     }
+  },
+  {
+    id: 'example-acc-master',
+    engine: 'access',
+    title: 'マスター参照のなぞり解き',
+    category: 'マスター参照',
+    difficulty: 1,
+    prompt: '診療科マスターから deptCode が IM の deptName を DLookup で表示するんな',
+    hints: ['DLookup を使うんな', '条件は deptCode = \'IM\' なんな'],
+    starter: 'Sub Main()\nDebug.Print \nEnd Sub',
+    walkthroughSteps: [
+      'Debug.Print の後ろに DLookup を書くんな。',
+      '取り出す列は deptName、テーブルは 診療科 なんな。',
+      '条件に deptCode = \'IM\' を入れると 内科 が表示されるんな。'
+    ],
+    answer: 'Sub Main()\nDebug.Print DLookup("deptName", "診療科", "deptCode = \'IM\'")\nEnd Sub',
+    lesson: {
+      overview: 'コードから名称を取り出すマスター参照の最小形をなぞるんな。',
+      steps: ['取り出す列を決めるんな。', '参照先テーブルを指定するんな。', '検索条件を文字列で渡すんな。'],
+      focusItems: [
+        {
+          name: 'DLookup',
+          kind: 'function',
+          description: '条件に合う 1 件の値を取り出す関数なんな。',
+          example: 'DLookup("deptName", "診療科", "deptCode = \'IM\'")'
+        }
+      ],
+      reviewCards: [
+        {
+          question: 'コードから名称を引くときに使いやすい関数は何なんな。',
+          answer: 'DLookup なんな。'
+        }
+      ]
+    },
+    tags: ['DLookup', 'Master'],
+    entryMode: 'fullModule',
+    entryPoint: 'Main',
+    args: [],
+    initialDb: {
+      診療科: {
+        columns: ['deptCode', 'deptName'],
+        rows: [['IM', '内科']]
+      }
+    },
+    judge: {
+      type: 'debug',
+      expectedLines: ['内科']
+    }
+  },
+  {
+    id: 'example-acc-worktable',
+    engine: 'access',
+    title: 'ワークテーブルのなぞり解き',
+    category: 'ワークテーブル',
+    difficulty: 1,
+    prompt: '報告ワークに AddNew で 1 行追加するんな',
+    hints: ['AddNew を使うんな', '最後は Update なんな'],
+    starter: 'Sub Main()\nDim rs As Variant\nSet rs = CurrentDb.OpenRecordset("報告ワーク")\nrs.AddNew\n\nrs.Update\nEnd Sub',
+    walkthroughSteps: [
+      '報告ワークを Recordset として開くんな。',
+      'AddNew と Update の間で、必要な Fields に値を入れるんな。',
+      'staffId と outputStatus を入れて Update すれば 1 行追加できるんな。'
+    ],
+    answer: 'Sub Main()\nDim rs As Variant\nSet rs = CurrentDb.OpenRecordset("報告ワーク")\nrs.AddNew\nrs.Fields("staffId") = 101\nrs.Fields("outputStatus") = "出力対象"\nrs.Update\nEnd Sub',
+    lesson: {
+      overview: 'Excel 出力前に使うワークテーブルへ行を追加する基本形をなぞるんな。',
+      steps: ['Recordset を開くんな。', 'AddNew で新規行を始めるんな。', 'Fields へ代入して Update で確定するんな。'],
+      focusItems: [
+        {
+          name: 'AddNew',
+          kind: 'method',
+          description: 'Recordset に新しい行を追加し始めるメソッドなんな。',
+          example: 'rs.AddNew'
+        }
+      ],
+      reviewCards: [
+        {
+          question: 'Recordset で新規行を追加するとき、最初に呼ぶメソッドは何なんな。',
+          answer: 'AddNew なんな。'
+        }
+      ]
+    },
+    tags: ['AddNew', 'WorkTable'],
+    entryMode: 'fullModule',
+    entryPoint: 'Main',
+    args: [],
+    initialDb: {
+      報告ワーク: {
+        columns: ['staffId', 'outputStatus'],
+        rows: []
+      }
+    },
+    judge: {
+      type: 'table',
+      table: '報告ワーク',
+      expectedRows: [[101, '出力対象']]
+    }
   }
 ];
 

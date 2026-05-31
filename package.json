@@ -4,12 +4,13 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "npm run copy-sql-wasm && vite",
+    "build": "npm run copy-sql-wasm && tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "check-problems": "node --import tsx scripts/check-problems.ts",
+    "copy-sql-wasm": "node scripts/copy-sql-wasm.mjs",
     "postinstall": "node scripts/copy-sql-wasm.mjs"
   },
   "dependencies": {

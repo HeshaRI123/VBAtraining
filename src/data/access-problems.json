@@ -250,5 +250,601 @@
       "table": "顧客",
       "expectedRows": [[1, "A", "再確認"], [2, "B", "済"], [3, "C", "再確認"]]
     }
+  },
+  {
+    "id": "acc-med-lookup-001",
+    "engine": "access",
+    "title": "診療科名をマスターから取得する",
+    "category": "マスター参照",
+    "difficulty": 1,
+    "prompt": "診療科マスターから deptCode が IM の deptName を DLookup で取得し、Debug.Print するんな",
+    "hints": ["DLookup を使うんな", "条件は deptCode = 'IM' なんな"],
+    "answer": "Sub Main()\nDebug.Print DLookup(\"deptName\", \"診療科\", \"deptCode = 'IM'\")\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、診療科コードから診療科名を引くマスター参照を練習するんな。フォーム表示や報告書出力の前に、コード値を名称へ変える考え方なんな。",
+      "steps": [
+        "DLookup の 1 つ目に取り出したい列 deptName を入れるんな。",
+        "2 つ目に参照先テーブル 診療科 を入れるんな。",
+        "3 つ目に deptCode = 'IM' の条件を入れて Debug.Print するんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "DLookup",
+          "kind": "function",
+          "description": "条件に合う 1 件の値をマスターから取り出す関数なんな。",
+          "example": "DLookup(\"deptName\", \"診療科\", \"deptCode = 'IM'\")"
+        },
+        {
+          "name": "criteria",
+          "kind": "syntax",
+          "description": "どの行を探すかを指定する条件文字列なんな。",
+          "example": "\"deptCode = 'IM'\""
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "DLookup の第 2 引数には何を入れるんな。",
+          "answer": "参照するテーブル名を入れるんな。この問題なら 診療科 なんな。"
+        },
+        {
+          "question": "コードから名称を出したいとき、なぜマスター参照を使うんな。",
+          "answer": "コード値を画面や報告書で読める名称に変えるためなんな。"
+        }
+      ]
+    },
+    "tags": ["DLookup", "Master"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "診療科": {
+        "columns": ["deptCode", "deptName"],
+        "rows": [["IM", "内科"], ["PED", "小児科"], ["SUR", "外科"]]
+      }
+    },
+    "judge": {
+      "type": "debug",
+      "expectedLines": ["内科"]
+    }
+  },
+  {
+    "id": "acc-med-count-001",
+    "engine": "access",
+    "title": "未提出の作業報告を数える",
+    "category": "ドメイン集計",
+    "difficulty": 1,
+    "prompt": "作業報告テーブルで status が 未提出 の件数を DCount で数えて Debug.Print するんな",
+    "hints": ["DCount を使うんな", "criteria は status = '未提出' なんな"],
+    "answer": "Sub Main()\nDebug.Print DCount(\"*\", \"作業報告\", \"status = '未提出'\")\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、教育者や管理者が確認する未提出件数を DCount で数える練習をするんな。提出状況の確認に使いやすい基本形なんな。",
+      "steps": [
+        "件数そのものを数えるので DCount の 1 つ目は * にするんな。",
+        "対象テーブルは 作業報告 にするんな。",
+        "status が 未提出 の行だけを条件にして表示するんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "DCount",
+          "kind": "function",
+          "description": "条件に合うレコード件数を返す関数なんな。",
+          "example": "DCount(\"*\", \"作業報告\", \"status = '未提出'\")"
+        },
+        {
+          "name": "Debug.Print",
+          "kind": "statement",
+          "description": "確認したい集計結果を出力する命令なんな。",
+          "example": "Debug.Print DCount(\"*\", \"作業報告\")"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "DCount(\"*\", ...) の * は何を数える意味なんな。",
+          "answer": "条件に合うレコードの件数そのものを数える意味なんな。"
+        },
+        {
+          "question": "未提出だけ数えたいとき、条件にはどの列を見るんな。",
+          "answer": "提出状態を表す status を見るんな。"
+        }
+      ]
+    },
+    "tags": ["DCount", "Status"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "作業報告": {
+        "columns": ["reportId", "staffId", "deptCode", "workMinutes", "status"],
+        "rows": [[1, 101, "IM", 60, "提出済"], [2, 102, "PED", 45, "未提出"], [3, 103, "IM", 30, "未提出"], [4, 101, "IM", 20, "提出済"]]
+      }
+    },
+    "judge": {
+      "type": "debug",
+      "expectedLines": ["2"]
+    }
+  },
+  {
+    "id": "acc-med-sum-001",
+    "engine": "access",
+    "title": "診療科別の作業時間を集計する",
+    "category": "ドメイン集計",
+    "difficulty": 2,
+    "prompt": "作業報告テーブルで deptCode が IM の workMinutes 合計を DSum で Debug.Print するんな",
+    "hints": ["DSum を使うんな", "条件は deptCode = 'IM' なんな"],
+    "answer": "Sub Main()\nDebug.Print DSum(\"workMinutes\", \"作業報告\", \"deptCode = 'IM'\")\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、診療科別の作業時間を DSum で集計する練習をするんな。報告書の合計欄に出す値を作る考え方なんな。",
+      "steps": [
+        "合計したい列 workMinutes を DSum の 1 つ目に入れるんな。",
+        "対象テーブル 作業報告 を指定するんな。",
+        "deptCode = 'IM' で内科分だけに絞って表示するんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "DSum",
+          "kind": "function",
+          "description": "条件に合う数値列の合計を返す関数なんな。",
+          "example": "DSum(\"workMinutes\", \"作業報告\", \"deptCode = 'IM'\")"
+        },
+        {
+          "name": "条件付き集計",
+          "kind": "syntax",
+          "description": "必要な部門や期間だけに絞って合計する考え方なんな。",
+          "example": "\"deptCode = 'IM'\""
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "DSum の第 1 引数には何を入れるんな。",
+          "answer": "合計したい数値列の名前を入れるんな。この問題なら workMinutes なんな。"
+        },
+        {
+          "question": "診療科別の合計を出すとき、条件には何を入れるんな。",
+          "answer": "対象の診療科コードを指定するんな。"
+        }
+      ]
+    },
+    "tags": ["DSum", "Aggregate"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "作業報告": {
+        "columns": ["reportId", "staffId", "deptCode", "workMinutes", "status"],
+        "rows": [[1, 101, "IM", 60, "提出済"], [2, 102, "PED", 45, "提出済"], [3, 103, "IM", 30, "提出済"], [4, 101, "IM", 20, "未提出"]]
+      }
+    },
+    "judge": {
+      "type": "debug",
+      "expectedLines": ["110"]
+    }
+  },
+  {
+    "id": "acc-med-rs-001",
+    "engine": "access",
+    "title": "従業員の所属診療科を更新する",
+    "category": "Recordset",
+    "difficulty": 3,
+    "prompt": "Recordset で従業員テーブルを1行ずつ見て、staffId が 102 の deptCode を SUR に更新するんな",
+    "hints": ["従業員テーブルを OpenRecordset で開くんな", "見つけた行だけ Edit と Update を使うんな"],
+    "answer": "Sub Main()\nDim rs As Variant\nSet rs = CurrentDb.OpenRecordset(\"従業員\")\nDo While Not rs.EOF\nIf rs.Fields(\"staffId\") = 102 Then\nrs.Edit\nrs.Fields(\"deptCode\") = \"SUR\"\nrs.Update\nEnd If\nrs.MoveNext\nLoop\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、従業員マスターを Recordset で走査して、該当者の所属診療科だけを更新する練習をするんな。フォームで保存ボタンを押した後の更新処理に近い形なんな。",
+      "steps": [
+        "CurrentDb.OpenRecordset で 従業員 テーブルを開くんな。",
+        "Do While Not rs.EOF で1行ずつ確認するんな。",
+        "staffId が 102 の行だけ Edit、Fields 代入、Update の順で更新するんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "OpenRecordset",
+          "kind": "method",
+          "description": "テーブルを Recordset として開くメソッドなんな。",
+          "example": "Set rs = CurrentDb.OpenRecordset(\"従業員\")"
+        },
+        {
+          "name": "Fields",
+          "kind": "method",
+          "description": "現在行の列値を読み書きする指定方法なんな。",
+          "example": "rs.Fields(\"deptCode\") = \"SUR\""
+        },
+        {
+          "name": "Edit",
+          "kind": "method",
+          "description": "現在行の編集を始める合図なんな。",
+          "example": "rs.Edit"
+        },
+        {
+          "name": "Update",
+          "kind": "method",
+          "description": "変更を確定するメソッドなんな。",
+          "example": "rs.Update"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "Recordset の現在行を書き換える前に必要なメソッドは何なんな。",
+          "answer": "Edit なんな。"
+        },
+        {
+          "question": "1行ずつ見て次へ進むには何を呼ぶんな。",
+          "answer": "rs.MoveNext を呼ぶんな。"
+        }
+      ]
+    },
+    "tags": ["Recordset", "Master", "Update"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "従業員": {
+        "columns": ["staffId", "staffName", "deptCode", "isActive"],
+        "rows": [[101, "佐藤", "IM", true], [102, "鈴木", "PED", true], [103, "田中", "SUR", true]]
+      }
+    },
+    "judge": {
+      "type": "table",
+      "table": "従業員",
+      "expectedRows": [[101, "佐藤", "IM", 1], [102, "鈴木", "SUR", 1], [103, "田中", "SUR", 1]]
+    }
+  },
+  {
+    "id": "acc-med-exec-001",
+    "engine": "access",
+    "title": "退職者を作業対象から除外する",
+    "category": "SQL",
+    "difficulty": 2,
+    "prompt": "CurrentDb.Execute の UPDATE 文で、isRetired が True の従業員の isTarget を False にするんな",
+    "hints": ["UPDATE 従業員 SET ... を使うんな", "WHERE isRetired = True で絞るんな"],
+    "answer": "Sub Main()\nCurrentDb.Execute(\"UPDATE 従業員 SET isTarget = False WHERE isRetired = True\")\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、退職者を出力対象から外す一括更新を練習するんな。対象者の除外はフォーム操作よりSQLでまとめて処理した方が見通しがよい場面なんな。",
+      "steps": [
+        "CurrentDb.Execute に UPDATE 文を文字列で渡すんな。",
+        "SET isTarget = False で対象外にするんな。",
+        "WHERE isRetired = True で退職者だけに絞るんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "CurrentDb.Execute",
+          "kind": "method",
+          "description": "更新SQLを実行するメソッドなんな。",
+          "example": "CurrentDb.Execute(\"UPDATE 従業員 SET isTarget = False\")"
+        },
+        {
+          "name": "WHERE",
+          "kind": "syntax",
+          "description": "更新対象の行を絞るSQLの条件なんな。",
+          "example": "WHERE isRetired = True"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "全員ではなく退職者だけ更新したいとき、SQLのどこで絞るんな。",
+          "answer": "WHERE 句で絞るんな。"
+        },
+        {
+          "question": "True と False はこのエンジンで Access SQL として扱えるんな。",
+          "answer": "扱えるんな。内部では判定用に変換されるんな。"
+        }
+      ]
+    },
+    "tags": ["Execute", "UPDATE", "Boolean"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "従業員": {
+        "columns": ["staffId", "staffName", "isRetired", "isTarget"],
+        "rows": [[101, "佐藤", 0, 1], [102, "鈴木", -1, 1], [103, "田中", 0, 1]]
+      }
+    },
+    "judge": {
+      "type": "table",
+      "table": "従業員",
+      "expectedRows": [[101, "佐藤", 0, 1], [102, "鈴木", -1, 0], [103, "田中", 0, 1]]
+    }
+  },
+  {
+    "id": "acc-med-addnew-001",
+    "engine": "access",
+    "title": "報告ワークへ1行追加する",
+    "category": "ワークテーブル",
+    "difficulty": 2,
+    "prompt": "Recordset.AddNew で報告ワークテーブルに staffId 101、deptCode IM、workMinutes 60、outputStatus 出力対象 の行を追加するんな",
+    "hints": ["報告ワークを OpenRecordset で開くんな", "AddNew、Fields 代入、Update の順なんな"],
+    "answer": "Sub Main()\nDim rs As Variant\nSet rs = CurrentDb.OpenRecordset(\"報告ワーク\")\nrs.AddNew\nrs.Fields(\"staffId\") = 101\nrs.Fields(\"deptCode\") = \"IM\"\nrs.Fields(\"workMinutes\") = 60\nrs.Fields(\"outputStatus\") = \"出力対象\"\nrs.Update\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、指定Excelテンプレートへ転記する前のワークテーブルに行を追加する練習をするんな。実務ではこのワークテーブルを整えてからExcelへ流し込むことが多いんな。",
+      "steps": [
+        "報告ワークを Recordset として開くんな。",
+        "AddNew で新しい行の入力を始めるんな。",
+        "必要な列へ値を入れて Update で追加を確定するんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "AddNew",
+          "kind": "method",
+          "description": "Recordset に新しい行を追加し始めるメソッドなんな。",
+          "example": "rs.AddNew"
+        },
+        {
+          "name": "Update",
+          "kind": "method",
+          "description": "AddNew 中の行をテーブルへ確定するメソッドなんな。",
+          "example": "rs.Update"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "Recordset で新規行を作る最初のメソッドは何なんな。",
+          "answer": "AddNew なんな。"
+        },
+        {
+          "question": "AddNew した行を確定するには最後に何を呼ぶんな。",
+          "answer": "Update を呼ぶんな。"
+        }
+      ]
+    },
+    "tags": ["AddNew", "WorkTable"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "報告ワーク": {
+        "columns": ["staffId", "deptCode", "workMinutes", "outputStatus"],
+        "rows": []
+      }
+    },
+    "judge": {
+      "type": "table",
+      "table": "報告ワーク",
+      "expectedRows": [[101, "IM", 60, "出力対象"]]
+    }
+  },
+  {
+    "id": "acc-med-runsql-001",
+    "engine": "access",
+    "title": "ワークテーブルを初期化する",
+    "category": "ワークテーブル",
+    "difficulty": 2,
+    "prompt": "DoCmd.RunSQL で報告ワークテーブルの前回出力分をすべて削除するんな",
+    "hints": ["DELETE FROM 報告ワーク を使うんな", "DoCmd.RunSQL にSQL文字列を渡すんな"],
+    "answer": "Sub Main()\nDoCmd.RunSQL(\"DELETE FROM 報告ワーク\")\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、Excel出力前にワークテーブルを空にする初期化処理を練習するんな。前回の行が残ったままだと報告書が混ざるので大事な処理なんな。",
+      "steps": [
+        "DoCmd.RunSQL に DELETE 文を渡すんな。",
+        "FROM 報告ワーク で削除対象テーブルを指定するんな。",
+        "WHERE を付けないので全行削除になることを意識するんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "DoCmd.RunSQL",
+          "kind": "method",
+          "description": "SQLを実行するAccessの命令なんな。",
+          "example": "DoCmd.RunSQL(\"DELETE FROM 報告ワーク\")"
+        },
+        {
+          "name": "DELETE",
+          "kind": "syntax",
+          "description": "テーブルの行を削除するSQLなんな。",
+          "example": "DELETE FROM 報告ワーク"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "ワークテーブルを作り直す前に初期化する理由は何なんな。",
+          "answer": "前回出力分の行が残って混ざるのを防ぐためなんな。"
+        },
+        {
+          "question": "DELETE FROM 報告ワーク に WHERE がない場合はどうなるんな。",
+          "answer": "報告ワークの全行が削除されるんな。"
+        }
+      ]
+    },
+    "tags": ["RunSQL", "DELETE", "WorkTable"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "報告ワーク": {
+        "columns": ["staffId", "deptCode", "workMinutes", "outputStatus"],
+        "rows": [[101, "IM", 60, "出力済"], [102, "PED", 45, "出力済"]]
+      }
+    },
+    "judge": {
+      "type": "table",
+      "table": "報告ワーク",
+      "expectedRows": []
+    }
+  },
+  {
+    "id": "acc-med-work-001",
+    "engine": "access",
+    "title": "作業報告から報告ワークを作る",
+    "category": "ワークテーブル",
+    "difficulty": 4,
+    "prompt": "Recordset で作業報告を読み、status が 提出済 の行だけ報告ワークへ staffId、deptCode、workMinutes、outputStatus を追加するんな。outputStatus は 出力対象 にするんな",
+    "hints": ["読み取り用と追加用の Recordset を2つ使うんな", "提出済の行だけ AddNew するんな"],
+    "answer": "Sub Main()\nDim src As Variant\nDim work As Variant\nSet src = CurrentDb.OpenRecordset(\"作業報告\")\nSet work = CurrentDb.OpenRecordset(\"報告ワーク\")\nDo While Not src.EOF\nIf src.Fields(\"status\") = \"提出済\" Then\nwork.AddNew\nwork.Fields(\"staffId\") = src.Fields(\"staffId\")\nwork.Fields(\"deptCode\") = src.Fields(\"deptCode\")\nwork.Fields(\"workMinutes\") = src.Fields(\"workMinutes\")\nwork.Fields(\"outputStatus\") = \"出力対象\"\nwork.Update\nEnd If\nsrc.MoveNext\nLoop\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、元データを読みながら出力用ワークテーブルへ必要な行だけ移す流れを練習するんな。指定Excelテンプレートへ流し込む直前の整形処理に近い問題なんな。",
+      "steps": [
+        "作業報告を読み取り用、報告ワークを追加用として開くんな。",
+        "作業報告を Do While Not EOF で順番に見るんな。",
+        "status が 提出済 の行だけ報告ワークへ AddNew して必要な列を写すんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "複数 Recordset",
+          "kind": "syntax",
+          "description": "読み取り元と書き込み先を別々に開いて処理する形なんな。",
+          "example": "Set src = CurrentDb.OpenRecordset(\"作業報告\")"
+        },
+        {
+          "name": "AddNew",
+          "kind": "method",
+          "description": "出力用ワークテーブルへ行を追加するメソッドなんな。",
+          "example": "work.AddNew"
+        },
+        {
+          "name": "条件分岐",
+          "kind": "statement",
+          "description": "出力対象にする行だけを選ぶための If 文なんな。",
+          "example": "If src.Fields(\"status\") = \"提出済\" Then"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "読み取り元と書き込み先が違うとき、Recordset はいくつ使うと分かりやすいんな。",
+          "answer": "2つ使うと分かりやすいんな。"
+        },
+        {
+          "question": "提出済だけワークテーブルへ入れる判断はどこで行うんな。",
+          "answer": "If src.Fields(\"status\") = \"提出済\" Then の条件で行うんな。"
+        }
+      ]
+    },
+    "tags": ["Recordset", "AddNew", "WorkTable"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "作業報告": {
+        "columns": ["reportId", "staffId", "deptCode", "workMinutes", "status"],
+        "rows": [[1, 101, "IM", 60, "提出済"], [2, 102, "PED", 45, "未提出"], [3, 103, "SUR", 90, "提出済"]]
+      },
+      "報告ワーク": {
+        "columns": ["staffId", "deptCode", "workMinutes", "outputStatus"],
+        "rows": []
+      }
+    },
+    "judge": {
+      "type": "table",
+      "table": "報告ワーク",
+      "expectedRows": [[101, "IM", 60, "出力対象"], [103, "SUR", 90, "出力対象"]]
+    }
+  },
+  {
+    "id": "acc-med-iif-001",
+    "engine": "access",
+    "title": "長時間作業を要確認にする",
+    "category": "SQL",
+    "difficulty": 3,
+    "prompt": "CurrentDb.Execute と IIf を使い、報告ワークの workMinutes が 60 以上なら checkStatus を 要確認、それ以外は 通常 に更新するんな",
+    "hints": ["IIf(workMinutes >= 60, '要確認', '通常') を使うんな", "UPDATE 報告ワーク SET checkStatus = ... なんな"],
+    "answer": "Sub Main()\nCurrentDb.Execute(\"UPDATE 報告ワーク SET checkStatus = IIf(workMinutes >= 60, '要確認', '通常')\")\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、SQLだけで出力対象の確認区分を一括設定する練習をするんな。件数が多いワークテーブルでは、1行ずつ回すよりSQLの方が見通しよく速い場面があるんな。",
+      "steps": [
+        "CurrentDb.Execute に UPDATE 文を渡すんな。",
+        "SET checkStatus = IIf(...) で条件に応じて値を切り替えるんな。",
+        "workMinutes が 60 以上なら 要確認、それ以外は 通常 にするんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "IIf",
+          "kind": "function",
+          "description": "条件によって返す値を切り替えるAccess SQLの関数なんな。",
+          "example": "IIf(workMinutes >= 60, '要確認', '通常')"
+        },
+        {
+          "name": "一括更新",
+          "kind": "syntax",
+          "description": "複数行をSQLでまとめて更新する考え方なんな。",
+          "example": "UPDATE 報告ワーク SET checkStatus = ..."
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "IIf の第1引数には何を書くんな。",
+          "answer": "真偽を判定する条件を書くんな。"
+        },
+        {
+          "question": "RecordsetではなくSQL一括更新が向くのはどんな場面なんな。",
+          "answer": "同じ条件で多くの行をまとめて更新したい場面なんな。"
+        }
+      ]
+    },
+    "tags": ["Execute", "IIf", "WorkTable"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "報告ワーク": {
+        "columns": ["staffId", "deptCode", "workMinutes", "checkStatus"],
+        "rows": [[101, "IM", 60, ""], [102, "PED", 45, ""], [103, "SUR", 90, ""]]
+      }
+    },
+    "judge": {
+      "type": "table",
+      "table": "報告ワーク",
+      "expectedRows": [[101, "IM", 60, "要確認"], [102, "PED", 45, "通常"], [103, "SUR", 90, "要確認"]]
+    }
+  },
+  {
+    "id": "acc-med-query-001",
+    "engine": "access",
+    "title": "Excel出力順の上位行を確認する",
+    "category": "クエリ",
+    "difficulty": 2,
+    "prompt": "Main は空でよいので、判定SQLが出力対象の先頭3件を診療科コードと従業員ID順に確認することを読むんな",
+    "hints": ["空の Sub Main で通るんな", "TOP、LIKE、ORDER BY の読み方を確認するんな"],
+    "answer": "Sub Main()\nEnd Sub",
+    "lesson": {
+      "overview": "この問題では、Excelテンプレートへ転記する前に、出力対象と並び順をSQLで確認する練習をするんな。コード量は少ないけれど、判定クエリの意図を読む力が大事なんな。",
+      "steps": [
+        "Main は空のままでよいんな。",
+        "LIKE '出力*' は 出力 で始まる状態を対象にする条件なんな。",
+        "ORDER BY deptCode, staffId で診療科コード、従業員IDの順に並ぶんな。"
+      ],
+      "focusItems": [
+        {
+          "name": "TOP",
+          "kind": "syntax",
+          "description": "並び替え後の先頭から指定件数を取り出す書き方なんな。",
+          "example": "SELECT TOP 3 staffId FROM 報告ワーク"
+        },
+        {
+          "name": "LIKE",
+          "kind": "operator",
+          "description": "文字列のパターンに合う行を探す比較なんな。",
+          "example": "outputStatus LIKE '出力*'"
+        },
+        {
+          "name": "ORDER BY",
+          "kind": "syntax",
+          "description": "出力順を決めるSQLの指定なんな。",
+          "example": "ORDER BY deptCode, staffId"
+        }
+      ],
+      "reviewCards": [
+        {
+          "question": "LIKE '出力*' はどんな値に一致するんな。",
+          "answer": "出力 で始まる値に一致するんな。"
+        },
+        {
+          "question": "Excelへ転記する前に ORDER BY を確認する理由は何なんな。",
+          "answer": "テンプレートへ流し込む行の順番を安定させるためなんな。"
+        }
+      ]
+    },
+    "tags": ["Query", "TOP", "Like", "OrderBy"],
+    "entryMode": "fullModule",
+    "entryPoint": "Main",
+    "args": [],
+    "initialDb": {
+      "報告ワーク": {
+        "columns": ["staffId", "deptCode", "workMinutes", "outputStatus"],
+        "rows": [[103, "SUR", 90, "出力対象"], [101, "IM", 60, "出力対象"], [102, "PED", 45, "確認中"], [104, "IM", 30, "出力済"], [105, "PED", 75, "出力対象"]]
+      }
+    },
+    "judge": {
+      "type": "query",
+      "sql": "SELECT TOP 3 staffId, deptCode FROM 報告ワーク WHERE outputStatus LIKE '出力*' ORDER BY deptCode, staffId",
+      "expectedRows": [[101, "IM"], [104, "IM"], [105, "PED"]],
+      "preserveOrder": true
+    }
   }
 ]
