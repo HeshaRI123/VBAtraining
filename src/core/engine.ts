@@ -329,23 +329,26 @@ const KEYWORDS = new Set([
 const PRECEDENCE: Record<string, number> = {
   or: 1,
   and: 2,
-  '=': 3,
-  '<>': 3,
-  '<': 3,
-  '<=': 3,
-  '>': 3,
-  '>=': 3,
-  '&': 4,
-  '+': 5,
-  '-': 5,
-  '*': 6,
-  '/': 6,
-  '\\': 6,
-  mod: 6,
-  '^': 7
+  '=': 4,
+  '<>': 4,
+  '<': 4,
+  '<=': 4,
+  '>': 4,
+  '>=': 4,
+  '&': 5,
+  '+': 6,
+  '-': 6,
+  mod: 7,
+  '\\': 8,
+  '*': 9,
+  '/': 9,
+  '^': 10
 };
 
 const SUPPORTED_BINARY_OPERATORS = new Set(Object.keys(PRECEDENCE));
+const UNARY_PRECEDENCE: Record<string, number> = {
+  not: 3
+};
 const SUPPORTED_UNARY_OPERATORS = new Set(['-', 'not']);
 const UNSUPPORTED_TOKENS = ['with', 'on', '_'];
 
@@ -1050,7 +1053,7 @@ class Parser {
   }
 
   private parseExpression(precedence = 0): ExpressionNode {
-    let left = this.parseUnary();
+    let left = this.parsePrefix(precedence);
     while (true) {
       const operatorToken = this.peek();
       const operator = normalizeName(operatorToken.value);
@@ -1074,10 +1077,28 @@ class Parser {
     return left;
   }
 
+  private parsePrefix(precedence: number): ExpressionNode {
+    if (this.peek().type === 'keyword') {
+      const operator = normalizeName(this.peek().value);
+      const operatorPrecedence = UNARY_PRECEDENCE[operator];
+      if (operatorPrecedence !== undefined && operatorPrecedence > precedence) {
+        const token = this.advance();
+        const argument = this.parseExpression(operatorPrecedence);
+        return {
+          kind: 'UnaryExpression',
+          operator,
+          argument,
+          range: mergeRanges(token.range, argument.range)
+        };
+      }
+    }
+    return this.parseUnary();
+  }
+
   private parseUnary(): ExpressionNode {
     if (this.peek().type === 'operator' || this.peek().type === 'keyword') {
       const operator = normalizeName(this.peek().value);
-      if (SUPPORTED_UNARY_OPERATORS.has(operator)) {
+      if (SUPPORTED_UNARY_OPERATORS.has(operator) && UNARY_PRECEDENCE[operator] === undefined) {
         const token = this.advance();
         const argument = this.parseUnary();
         return {
@@ -1530,6 +1551,9 @@ class Interpreter {
         const start = asNumber(this.evaluateExpression(statement.start, environment), statement.start.range);
         const end = asNumber(this.evaluateExpression(statement.end, environment), statement.end.range);
         const step = statement.step ? asNumber(this.evaluateExpression(statement.step, environment), statement.step.range) : 1;
+        if (step === 0) {
+          throw new RuntimeError('For の Step に 0 は指定できないんな', statement.step?.range ?? statement.range);
+        }
         for (let i = start; step >= 0 ? i <= end : i >= end; i += step) {
           variableRef.set(i);
           this.executeStatements(statement.body, new Environment(environment));
@@ -1808,10 +1832,19 @@ function evaluateBinary(operator: string, left: RuntimeValue, right: RuntimeValu
       case '*':
         return leftNumber * rightNumber;
       case '/':
+        if (rightNumber === 0) {
+          throw new RuntimeError('0 で割ることはできないんな', range);
+        }
         return leftNumber / rightNumber;
       case '\\':
+        if (rightNumber === 0) {
+          throw new RuntimeError('0 で割ることはできないんな', range);
+        }
         return Math.trunc(leftNumber / rightNumber);
       case 'mod':
+        if (rightNumber === 0) {
+          throw new RuntimeError('0 で割ることはできないんな', range);
+        }
         return leftNumber % rightNumber;
       case '^':
         return leftNumber ** rightNumber;
@@ -2859,7 +2892,7 @@ export function judgeResult(problem: ProblemDefinition, runResult: RunResult): J
         const sheet = runResult.snapshot.sheet ?? {};
         const expectedEntries = Object.entries(problem.judge.expected);
         for (const [address, expected] of expectedEntries) {
-          if (!roughlyEqual(sheet[address.toUpperCase()], expected, problem.judge.epsilon ?? DEFAULT_EPSILON)) {
+          if (!valuesEqual(sheet[address.toUpperCase()], expected, problem.judge.epsilon ?? DEFAULT_EPSILON)) {
             return {
               passed: false,
               summary: `${address} の値が期待と違うんな`,
@@ -2876,7 +2909,10 @@ export function judgeResult(problem: ProblemDefinition, runResult: RunResult): J
       case 'debug': {
         const actual = runResult.debugLines.map(normalizeDebugLine).filter(Boolean);
         const expected = problem.judge.expectedLines.map(normalizeDebugLine).filter(Boolean);
-        if (actual.length !== expected.length || actual.some((line, index) => line !== expected[index])) {
+        if (
+          actual.length !== expected.length ||
+          actual.some((line, index) => !debugLinesEqual(line, expected[index], problem.judge.epsilon ?? DEFAULT_EPSILON))
+        ) {
           return {
             passed: false,
             summary: 'Debug.Print の出力が期待と違うんな',
@@ -2890,7 +2926,7 @@ export function judgeResult(problem: ProblemDefinition, runResult: RunResult): J
         };
       }
       case 'return': {
-        if (!roughlyEqual(runResult.returnValue, problem.judge.expected, problem.judge.epsilon ?? DEFAULT_EPSILON)) {
+        if (!valuesEqual(runResult.returnValue, problem.judge.expected, problem.judge.epsilon ?? DEFAULT_EPSILON)) {
           return {
             passed: false,
             summary: '戻り値が期待と違うんな',
@@ -2944,27 +2980,56 @@ export function judgeResult(problem: ProblemDefinition, runResult: RunResult): J
   }
 }
 
-function roughlyEqual(left: unknown, right: unknown, epsilon: number): boolean {
+function valuesEqual(left: unknown, right: unknown, epsilon: number): boolean {
   if (typeof left === 'number' && typeof right === 'number') {
-    return Math.abs(left - right) <= epsilon;
+    return Number.isFinite(left) && Number.isFinite(right) && Math.abs(left - right) <= epsilon;
   }
   return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function debugLinesEqual(actual: string, expected: string, epsilon: number): boolean {
+  const actualTokens = actual.split(/\s+/).filter(Boolean);
+  const expectedTokens = expected.split(/\s+/).filter(Boolean);
+  if (actualTokens.length !== expectedTokens.length) {
+    return false;
+  }
+  return actualTokens.every((token, index) => debugTokensEqual(token, expectedTokens[index], epsilon));
+}
+
+function debugTokensEqual(actual: string, expected: string, epsilon: number): boolean {
+  const actualNumber = parseFiniteNumberToken(actual);
+  const expectedNumber = parseFiniteNumberToken(expected);
+  if (actualNumber !== undefined && expectedNumber !== undefined) {
+    return valuesEqual(actualNumber, expectedNumber, epsilon);
+  }
+  return valuesEqual(actual, expected, epsilon);
+}
+
+function parseFiniteNumberToken(value: string): number | undefined {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 function compareRowSets(actual: unknown[][], expected: unknown[][], preserveOrder: boolean, epsilon: number): boolean {
   if (actual.length !== expected.length) {
     return false;
   }
-  const normalizeRows = (rows: unknown[][]) =>
-    rows.map((row) => JSON.stringify(row.map((item) => (typeof item === 'number' ? Number(item.toFixed(9)) : item))));
   if (preserveOrder) {
-    const normalizedActual = normalizeRows(actual);
-    const normalizedExpected = normalizeRows(expected);
-    return normalizedActual.every((row, index) => row === normalizedExpected[index]);
+    return actual.every((row, index) => rowEqual(row, expected[index], epsilon));
   }
-  const normalizedActual = normalizeRows(actual).sort();
-  const normalizedExpected = normalizeRows(expected).sort();
-  return normalizedActual.every((row, index) => row === normalizedExpected[index]);
+  const usedActualRows = new Set<number>();
+  return expected.every((expectedRow) => {
+    const actualIndex = actual.findIndex((actualRow, index) => !usedActualRows.has(index) && rowEqual(actualRow, expectedRow, epsilon));
+    if (actualIndex === -1) {
+      return false;
+    }
+    usedActualRows.add(actualIndex);
+    return true;
+  });
+}
+
+function rowEqual(actual: unknown[], expected: unknown[], epsilon: number): boolean {
+  return actual.length === expected.length && actual.every((value, index) => valuesEqual(value, expected[index], epsilon));
 }
 
 export async function runSubmission(

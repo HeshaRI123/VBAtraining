@@ -45,6 +45,7 @@ export interface CellJudgeSpec {
 export interface DebugJudgeSpec {
   type: 'debug';
   expectedLines: string[];
+  epsilon?: number;
 }
 
 export interface ReturnJudgeSpec {
